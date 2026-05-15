@@ -7,6 +7,7 @@
     <!-- استدعاء مكتبة Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+        /* سأبقي على تنسيقاتك كما هي تماماً */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f4f9; color: #333; line-height: 1.6; }
         .container { max-width: 100%; margin: 0 auto; padding: 15px; background-color: #fff; }
@@ -66,10 +67,11 @@
     </div>
 
     <script>
-        // --- إعدادات Supabase (كما هي في كودك الأصلي) ---
+        // --- إعدادات Supabase (كما هي في كودك الأصلي تماماً) ---
         const SUPABASE_URL = 'https://iejaflpeniiovjouvxbb.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_z09VVn-Gx2Ulvxg0gv7WHQ_S6QE28Ex';
 
+        // التأكد من تحميل المكتبة قبل الاستخدام
         const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         async function validateForm(event) {
@@ -86,26 +88,35 @@
             resultElement.className = '';
 
             try {
-                // البحث فقط عن الرمز في جدول 'verification_codes'
+                // البحث في الجدول والعمود كما في كودك الأصلي
                 const { data, error } = await _supabase
                     .from('verification_codes')
-                    .select('code')
+                    .select('*')
                     .eq('code', input)
-                    .maybeSingle();
+                    .maybeSingle(); // استخدمت maybeSingle لتجنب الخطأ في حال عدم وجود الرمز
 
                 if (error) throw error;
 
-                if (data) {
-                    // الرمز موجود وصحيح
-                    resultElement.textContent = "The code is correct ✅ هذا الرمز صحيح";
-                    resultElement.className = 'success';
-                } else {
-                    // الرمز غير موجود
+                if (!data) {
                     resultElement.textContent = "Code not found ❌ هذا الرمز غير موجود !";
                     resultElement.className = 'error';
+                } else if (data.is_used) {
+                    resultElement.textContent = "This code has already been used ❌ تم استخدام هذا الرمز مسبقاً !";
+                    resultElement.className = 'error';
+                } else {
+                    // تحديث حالة الرمز
+                    const { error: updateError } = await _supabase
+                        .from('verification_codes')
+                        .update({ is_used: true })
+                        .eq('id', data.id);
+
+                    if (updateError) throw updateError;
+
+                    resultElement.textContent = "The code is correct ✅ هذا الرمز صحيح";
+                    resultElement.className = 'success';
                 }
             } catch (err) {
-                console.error("Connection Error:", err);
+                console.error("Supabase Error:", err);
                 resultElement.textContent = "Error ❌ حدث خطأ في الاتصال";
                 resultElement.className = 'error';
             } finally {
@@ -120,4 +131,3 @@
     </script>
 </body>
 </html>
- 
